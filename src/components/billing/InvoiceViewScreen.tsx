@@ -59,6 +59,7 @@ export default function InvoiceViewScreen({ invoiceId }: InvoiceViewScreenProps)
   async function handleDownloadPDF() {
     if (!invoice) return;
     setPdfDownloading(true);
+    let objectUrl: string | null = null;
     try {
       const params = new URLSearchParams({ invoiceId: invoice.id });
       if (settings.companyName) params.set('cName', settings.companyName);
@@ -70,19 +71,48 @@ export default function InvoiceViewScreen({ invoiceId }: InvoiceViewScreenProps)
       if (settings.bankIFSC) params.set('bIFSC', settings.bankIFSC);
 
       const res = await fetch(`/api/v1/pdf?${params}`);
-      if (!res.ok) throw new Error('PDF generation failed');
+
+      if (!res.ok) {
+        // Pull the actual error message from the API response
+        let serverMsg = `Server error ${res.status}`;
+        try {
+          const json = await res.json();
+          serverMsg = json.error?.message ?? serverMsg;
+        } catch { /* response wasn't JSON */ }
+        throw new Error(serverMsg);
+      }
+
+      const contentType = res.headers.get('content-type') ?? '';
+      if (!contentType.includes('application/pdf')) {
+        throw new Error(`Unexpected response type: ${contentType}`);
+      }
 
       const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
+
+      if (blob.size === 0) {
+        throw new Error('Generated PDF is empty');
+      }
+
+      objectUrl = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url;
+      a.href = objectUrl;
       a.download = `${invoice.invoiceNumber}.pdf`;
+      a.style.display = 'none';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    } catch {
-      toast.error('PDF download failed — please try again');
+
+      // Delay revocation so the browser has time to queue the download
+      // before the object URL is invalidated
+      setTimeout(() => {
+        if (objectUrl) URL.revokeObjectURL(objectUrl);
+      }, 500);
+
+      toast.success(`${invoice.invoiceNumber}.pdf downloaded`);
+    } catch (err) {
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      const reason = err instanceof Error ? err.message : 'Unknown error';
+      toast.error(`PDF download failed: ${reason}`);
     } finally {
       setPdfDownloading(false);
     }

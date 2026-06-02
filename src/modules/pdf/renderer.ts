@@ -1,12 +1,11 @@
 // Puppeteer-based PDF renderer
-// Dev:  uses puppeteer's bundled Chromium (no extra setup)
-// Prod: uses @sparticuz/chromium — a Lambda/Vercel-compatible Chromium binary
+// Dev:  uses puppeteer with the cached Chromium binary
+// Prod: uses @sparticuz/chromium — Lambda/Vercel-compatible binary
 
 import puppeteerCore, { type Browser } from 'puppeteer-core';
 
 async function getBrowser(): Promise<Browser> {
   if (process.env.NODE_ENV === 'production') {
-    // @sparticuz/chromium provides a Chromium binary built for AWS Lambda / Vercel
     const chromium = (await import('@sparticuz/chromium')).default;
     return puppeteerCore.launch({
       args: chromium.args,
@@ -15,12 +14,22 @@ async function getBrowser(): Promise<Browser> {
     });
   }
 
-  // Local development: use the Chromium bundled with puppeteer
+  // Development: use puppeteer's cached Chromium.
+  // executablePath() is async in Puppeteer 25 — await it explicitly so we
+  // pass a concrete path rather than a Promise object.
   const { default: puppeteer } = await import('puppeteer');
-  return puppeteer.launch({
+  const executablePath = await puppeteer.executablePath();
+
+  return puppeteerCore.launch({
+    executablePath,
     headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu'],
-  }) as unknown as Browser;
+    args: [
+      '--no-sandbox',
+      '--disable-gpu',
+      '--disable-extensions',
+      '--disable-background-networking',
+    ],
+  });
 }
 
 export async function renderInvoicePDF(html: string): Promise<Buffer> {

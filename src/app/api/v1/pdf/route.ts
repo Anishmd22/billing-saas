@@ -81,8 +81,12 @@ export async function GET(req: NextRequest) {
     const html = buildInvoiceHTML(invoiceForPDF, companyInfoFromRequest(req.nextUrl.searchParams));
     pdfBuffer = await renderInvoicePDF(html);
   } catch (err) {
-    console.error('[GET /api/v1/pdf]', err);
-    return Response.json({ success: false, error: { message: 'PDF generation failed' } }, { status: 500 });
+    const reason = err instanceof Error ? err.message : String(err);
+    console.error('[GET /api/v1/pdf]', reason);
+    return Response.json(
+      { success: false, error: { message: `PDF generation failed: ${reason}` } },
+      { status: 500 }
+    );
   }
 
   const filename = `${invoice.invoiceNumber.replace(/[^a-zA-Z0-9-_]/g, '_')}.pdf`;
