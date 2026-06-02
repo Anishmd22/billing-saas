@@ -12,6 +12,7 @@ import StatusBadge from '@/components/shared/StatusBadge';
 import CurrencyDisplay from '@/components/shared/CurrencyDisplay';
 import ProductModal from './ProductModal';
 import AddStockModal from './AddStockModal';
+import RemoveStockModal from './RemoveStockModal';
 import type { StockStatus } from '@/components/shared/StatusBadge';
 
 function stockStatus(currentStock: number): StockStatus {
@@ -50,6 +51,9 @@ export default function InventoryScreen() {
 
   const [addStockOpen, setAddStockOpen] = useState(false);
   const [stockProduct, setStockProduct] = useState<ProductListItem | null>(null);
+
+  const [removeStockOpen, setRemoveStockOpen] = useState(false);
+  const [removeProduct, setRemoveProduct] = useState<ProductListItem | null>(null);
 
   const loadProducts = useCallback(() => {
     setLoading(true);
@@ -94,6 +98,12 @@ export default function InventoryScreen() {
     e.stopPropagation();
     setStockProduct(product);
     setAddStockOpen(true);
+  }
+
+  function openRemoveStock(product: ProductListItem, e: React.MouseEvent) {
+    e.stopPropagation();
+    setRemoveProduct(product);
+    setRemoveStockOpen(true);
   }
 
   const TAB_BTN = (active: boolean) =>
@@ -207,6 +217,12 @@ export default function InventoryScreen() {
                             + Stock
                           </button>
                           <button
+                            onClick={(e) => openRemoveStock(product, e)}
+                            className="h-7 px-2 text-xs font-medium rounded-md text-[var(--color-danger)] border border-[var(--color-danger)]/30 hover:bg-[var(--color-danger-bg)] transition-colors"
+                          >
+                            − Stock
+                          </button>
+                          <button
                             onClick={(e) => openEditProduct(product, e)}
                             className="flex items-center justify-center size-7 rounded-md text-[var(--color-muted)] hover:bg-[var(--color-surface-secondary)] transition-colors"
                             title="Edit"
@@ -291,6 +307,13 @@ export default function InventoryScreen() {
         open={addStockOpen}
         onOpenChange={setAddStockOpen}
         product={stockProduct}
+        onSaved={loadProducts}
+      />
+
+      <RemoveStockModal
+        open={removeStockOpen}
+        onOpenChange={setRemoveStockOpen}
+        product={removeProduct}
         onSaved={loadProducts}
       />
     </div>

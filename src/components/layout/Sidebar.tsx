@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
@@ -10,7 +11,6 @@ import {
   CreditCard,
   Users,
   Settings,
-  FileText,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -26,7 +26,6 @@ const navItems = [
 
 function isActive(href: string, pathname: string, exact: boolean): boolean {
   if (exact) return pathname === href;
-  // /billing/[id] pages should highlight "Previous Bills"
   if (href === '/billing/history') {
     return (
       pathname === '/billing/history' ||
@@ -41,12 +40,26 @@ export default function Sidebar() {
 
   return (
     <aside className="sidebar no-print">
-      <div className="flex items-center h-14 px-4 border-b border-white/10 shrink-0">
-        <FileText className="size-5 text-[var(--color-accent)] mr-2.5 shrink-0" />
-        <span className="text-white font-semibold text-[15px] tracking-tight">SmartBill</span>
+      {/* Logo header */}
+      <div className="flex items-center py-3 px-4 border-b border-white/10 shrink-0">
+        <Image
+          src="/billio.png"
+          alt="Billio"
+          width={240}
+          height={130}
+          priority
+          style={{
+            height: '130px',
+            width: 'auto',
+            maxWidth: '100%',
+            filter: 'brightness(0) invert(1)',
+            objectFit: 'contain',
+          }}
+        />
       </div>
 
-      <nav className="flex-1 py-2 overflow-y-auto">
+      {/* Navigation */}
+      <nav className="flex-1 py-3 overflow-y-auto">
         {navItems.map(({ href, label, icon: Icon, exact }) => (
           <Link
             key={href}
@@ -62,8 +75,9 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      <div className="px-4 py-3 border-t border-white/10 shrink-0">
-        <p className="text-[11px] text-[var(--color-muted-light)]">Smart Billing v0.1</p>
+      {/* Footer */}
+      <div className="px-6 py-3 border-t border-white/10 shrink-0">
+        <p className="text-[11px] text-[var(--color-muted-light)]">Billio v1.0</p>
       </div>
     </aside>
   );

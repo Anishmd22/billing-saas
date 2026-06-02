@@ -8,7 +8,7 @@ import { z } from 'zod';
 import { X } from 'lucide-react';
 import { toast } from 'sonner';
 import { productsApi, type ProductListItem } from '@/lib/api-client';
-import { PRODUCT_UNITS, GST_RATES } from '@/core/constants';
+import { PRODUCT_UNITS } from '@/core/constants';
 
 const schema = z.object({
   productName: z.string().min(1, 'Product name is required').max(255),
@@ -118,15 +118,30 @@ export default function ProductModal({ open, onOpenChange, product, onSaved }: P
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className={LABEL}>{isEdit ? 'Current Stock' : 'Opening Stock'} *</label>
-                  <input
-                    {...register('currentStock')}
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    className={`${INPUT} text-right font-mono`}
-                  />
-                  {errors.currentStock && (
-                    <p className="text-xs text-[var(--color-danger)] mt-1">{errors.currentStock.message}</p>
+                  {isEdit ? (
+                    <>
+                      <input
+                        value={product?.currentStock ?? 0}
+                        readOnly
+                        className={`${INPUT} text-right font-mono bg-[var(--color-surface-secondary)] text-[var(--color-muted)] cursor-not-allowed`}
+                      />
+                      <p className="text-xs text-[var(--color-muted-light)] mt-1">
+                        Use &ldquo;+ Stock&rdquo; to adjust.
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <input
+                        {...register('currentStock')}
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        className={`${INPUT} text-right font-mono`}
+                      />
+                      {errors.currentStock && (
+                        <p className="text-xs text-[var(--color-danger)] mt-1">{errors.currentStock.message}</p>
+                      )}
+                    </>
                   )}
                 </div>
                 <div>

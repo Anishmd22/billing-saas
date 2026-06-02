@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm, useFieldArray, useWatch, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -8,14 +8,36 @@ import { z } from 'zod';
 import { Plus, Trash2, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
-import { clientsApi, invoicesApi, type ClientListItem } from '@/lib/api-client';
+import { clientsApi, invoicesApi, productsApi, type ClientListItem, type ProductListItem } from '@/lib/api-client';
 import { useAppStore } from '@/core/store/useAppStore';
 import { GST_RATES, PRODUCT_UNITS, INDIAN_STATES } from '@/core/constants';
 import { calcInvoiceGST, getGSTType } from '@/core/utils/gst';
 import { formatCurrency, numberToWords } from '@/core/utils/currency';
 
+// ─── GST state-code → state name map (first 2 digits of GSTIN) ──────────────
+const GST_STATE_CODES: Record<string, string> = {
+  '01': 'JAMMU AND KASHMIR', '02': 'HIMACHAL PRADESH', '03': 'PUNJAB',
+  '04': 'CHANDIGARH', '05': 'UTTARAKHAND', '06': 'HARYANA',
+  '07': 'DELHI', '08': 'RAJASTHAN', '09': 'UTTAR PRADESH',
+  '10': 'BIHAR', '11': 'SIKKIM', '12': 'ARUNACHAL PRADESH',
+  '13': 'NAGALAND', '14': 'MANIPUR', '15': 'MIZORAM',
+  '16': 'TRIPURA', '17': 'MEGHALAYA', '18': 'ASSAM',
+  '19': 'WEST BENGAL', '20': 'JHARKHAND', '21': 'ODISHA',
+  '22': 'CHHATTISGARH', '23': 'MADHYA PRADESH', '24': 'GUJARAT',
+  '25': 'DADRA AND NAGAR HAVELI AND DAMAN AND DIU', '26': 'DADRA AND NAGAR HAVELI AND DAMAN AND DIU',
+  '27': 'MAHARASHTRA', '28': 'ANDHRA PRADESH', '29': 'KARNATAKA',
+  '30': 'GOA', '31': 'LAKSHADWEEP', '32': 'KERALA',
+  '33': 'TAMIL NADU', '34': 'PUDUCHERRY', '35': 'ANDAMAN AND NICOBAR ISLANDS',
+  '36': 'TELANGANA', '37': 'ANDHRA PRADESH', '38': 'LADAKH',
+};
+
+function stateFromGST(gst: string): string {
+  return GST_STATE_CODES[gst.slice(0, 2)] ?? '';
+}
+
 // ─── Form schema ────────────────────────────────────────────────────────────
 const itemSchema = z.object({
+  productId: z.string().optional(),
   productName: z.string().min(1, 'Product name is required'),
   hsnCode: z.string().optional(),
   quantity: z.coerce.number().positive('Qty > 0'),
@@ -28,7 +50,7 @@ const itemSchema = z.object({
 });
 
 const formSchema = z.object({
-  clientId: z.string().uuid('Please select a client'),
+  clientId: z.string().min(1, 'Please select a client'),
   invoiceDate: z.string().min(1, 'Invoice date is required'),
   customerState: z.string().min(1, 'Customer state is required'),
   notes: z.string().optional(),
@@ -41,7 +63,6 @@ type FormValues = z.infer<typeof formSchema>;
 const INPUT =
   'w-full h-9 px-3 text-sm border border-[var(--color-border-strong)] rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]/30 focus:border-[var(--color-accent)] transition-colors';
 const LABEL = 'block text-xs font-medium text-[var(--color-muted)] mb-1';
-const INPUT_NUM = `${INPUT} text-right font-mono`;
 
 // ─── Component ───────────────────────────────────────────────────────────
 export default function BillingFormScreen() {
@@ -54,8 +75,12 @@ export default function BillingFormScreen() {
   const [gstQuery, setGstQuery] = useState('');
   const [gstStatus, setGstStatus] = useState<'idle' | 'found' | 'notfound'>('idle');
 
+  const [products, setProducts] = useState<ProductListItem[]>([]);
+  const [activeDropdown, setActiveDropdown] = useState<number | null>(null);
+
   useEffect(() => {
     clientsApi.list().then(setClients).catch(() => {});
+    productsApi.list().then(setProducts).catch(() => {});
   }, []);
 
   const {
@@ -89,6 +114,25 @@ export default function BillingFormScreen() {
   }));
   const totals = calcInvoiceGST(lineItems, gstType);
 
+  // Product picker
+  function selectProduct(idx: number, product: ProductListItem) {
+    setValue(`items.${idx}.productId`, product.id);
+    setValue(`items.${idx}.productName`, product.productName);
+    setValue(`items.${idx}.hsnCode`, product.hsnCode ?? '');
+    setValue(`items.${idx}.unit`, product.unit as FormValues['items'][0]['unit']);
+    setValue(`items.${idx}.rate`, product.sellingPrice);
+    setActiveDropdown(null);
+  }
+
+  function getFilteredProducts(idx: number) {
+    const query = (watchedItems?.[idx]?.productName ?? '').toLowerCase();
+    if (!query) return products.slice(0, 8);
+    return products.filter((p) =>
+      p.productName.toLowerCase().includes(query) ||
+      (p.hsnCode ?? '').includes(query)
+    ).slice(0, 8);
+  }
+
   // GST lookup
   async function handleGSTFetch() {
     const gst = gstQuery.trim().toUpperCase();
@@ -97,6 +141,8 @@ export default function BillingFormScreen() {
       const client = await clientsApi.getByGST(gst);
       setSelectedClient(client);
       setValue('clientId', client.id);
+      const state = stateFromGST(gst);
+      if (state) setValue('customerState', state);
       setGstStatus('found');
     } catch {
       setGstStatus('notfound');
@@ -109,6 +155,12 @@ export default function BillingFormScreen() {
     setSelectedClient(client);
     setValue('clientId', id);
     setGstStatus('idle');
+    if (client?.gstNumber) {
+      const gst = client.gstNumber.trim().toUpperCase();
+      setGstQuery(gst);
+      const state = stateFromGST(gst);
+      if (state) setValue('customerState', state);
+    }
   }
 
   async function onSubmit(values: FormValues) {
@@ -229,13 +281,19 @@ export default function BillingFormScreen() {
             </div>
 
             {selectedClient && (
-              <div className="mt-3 p-3 rounded-lg bg-[var(--color-accent-bg)] text-sm">
+              <div className="mt-3 p-3 rounded-lg bg-[var(--color-accent-bg)] text-sm space-y-0.5">
                 <p className="font-medium text-[var(--color-text)]">{selectedClient.companyName}</p>
                 {selectedClient.gstNumber && (
-                  <p className="font-mono text-xs text-[var(--color-muted)] mt-0.5">{selectedClient.gstNumber}</p>
+                  <p className="font-mono text-xs text-[var(--color-muted)]">GST: {selectedClient.gstNumber}</p>
                 )}
                 {selectedClient.address && (
-                  <p className="text-xs text-[var(--color-muted)] mt-0.5">{selectedClient.address}</p>
+                  <p className="text-xs text-[var(--color-muted)]">{selectedClient.address}</p>
+                )}
+                {selectedClient.phone && (
+                  <p className="text-xs text-[var(--color-muted)]">Ph: {selectedClient.phone}</p>
+                )}
+                {selectedClient.email && (
+                  <p className="text-xs text-[var(--color-muted)]">{selectedClient.email}</p>
                 )}
               </div>
             )}
@@ -280,11 +338,47 @@ export default function BillingFormScreen() {
                       <tr key={field.id} className="border-b border-[var(--color-surface-hover)]">
                         <td className="px-3 py-2 text-[var(--color-muted)] text-xs">{idx + 1}</td>
                         <td className="px-3 py-2">
-                          <input
-                            {...register(`items.${idx}.productName`)}
-                            className="w-full h-8 px-2 text-sm border border-transparent rounded focus:border-[var(--color-accent)] focus:ring-0 focus:outline-none bg-transparent hover:bg-[var(--color-surface-secondary)] focus:bg-white transition-colors"
-                            placeholder="Product description"
-                          />
+                          {/* hidden productId */}
+                          <input type="hidden" {...register(`items.${idx}.productId`)} />
+                          <div className="relative">
+                            <input
+                              {...register(`items.${idx}.productName`)}
+                              className="w-full h-8 px-2 text-sm border border-transparent rounded focus:border-[var(--color-accent)] focus:ring-0 focus:outline-none bg-transparent hover:bg-[var(--color-surface-secondary)] focus:bg-white transition-colors"
+                              placeholder="Type to search inventory…"
+                              autoComplete="off"
+                              onFocus={() => setActiveDropdown(idx)}
+                              onBlur={() => setTimeout(() => setActiveDropdown(null), 150)}
+                            />
+                            {/* inventory product badge */}
+                            {watchedItems?.[idx]?.productId && (
+                              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-medium text-[var(--color-success)] bg-[var(--color-success-bg)] px-1.5 py-0.5 rounded">
+                                linked
+                              </span>
+                            )}
+                            {/* dropdown */}
+                            {activeDropdown === idx && getFilteredProducts(idx).length > 0 && (
+                              <div className="absolute left-0 top-full mt-0.5 z-50 w-72 bg-white border border-[var(--color-border)] rounded-lg shadow-lg overflow-hidden">
+                                {getFilteredProducts(idx).map((p) => (
+                                  <button
+                                    key={p.id}
+                                    type="button"
+                                    onMouseDown={() => selectProduct(idx, p)}
+                                    className="flex items-center justify-between w-full px-3 py-2 text-sm hover:bg-[var(--color-surface-secondary)] transition-colors text-left"
+                                  >
+                                    <div>
+                                      <span className="font-medium text-[var(--color-text)]">{p.productName}</span>
+                                      {p.hsnCode && <span className="ml-2 text-xs text-[var(--color-muted)] font-mono">{p.hsnCode}</span>}
+                                    </div>
+                                    <div className="text-right shrink-0 ml-3">
+                                      <span className={`text-xs font-mono font-medium ${p.currentStock <= 0 ? 'text-[var(--color-danger)]' : 'text-[var(--color-success)]'}`}>
+                                        {p.currentStock} {p.unit}
+                                      </span>
+                                    </div>
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                           {errors.items?.[idx]?.productName && (
                             <p className="text-xs text-[var(--color-danger)]">{errors.items[idx].productName?.message}</p>
                           )}

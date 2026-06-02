@@ -169,6 +169,8 @@ export const productsApi = {
   movements: () => req<MovementListItem[]>('/inventory/movements'),
   addStock: (data: { productId: string; quantity: number; remarks?: string }) =>
     req<MovementListItem>('/inventory/movements', { method: 'POST', body: JSON.stringify(data) }),
+  removeStock: (data: { productId: string; quantity: number; reason: string; remarks?: string }) =>
+    req<MovementListItem>('/inventory/movements', { method: 'POST', body: JSON.stringify(data) }),
 };
 
 export const invoicesApi = {

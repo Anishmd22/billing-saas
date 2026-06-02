@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Smart Billing",
+  title: "Billio",
   description: "GST-compliant billing and inventory management",
 };
 

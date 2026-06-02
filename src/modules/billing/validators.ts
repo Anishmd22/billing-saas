@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { GST_RATES, PRODUCT_UNITS } from '@/core/constants';
 
 const invoiceItemSchema = z.object({
-  productId: z.string().uuid().optional(),
+  productId: z.string().min(1).optional(),
   productName: z.string().min(1, 'Product name is required').max(255),
   hsnCode: z.string().max(50).optional().or(z.literal('')),
   quantity: z.coerce.number().positive('Quantity must be greater than 0'),
@@ -14,7 +14,7 @@ const invoiceItemSchema = z.object({
 });
 
 export const createInvoiceSchema = z.object({
-  clientId: z.string().uuid('Please select a valid client'),
+  clientId: z.string().min(1, 'Please select a valid client'),
   invoiceDate: z.string().min(1, 'Invoice date is required'),
   notes: z.string().max(1000).optional().or(z.literal('')),
   supplierState: z.string().min(1, 'Supplier state is required'),

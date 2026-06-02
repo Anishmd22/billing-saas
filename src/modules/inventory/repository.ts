@@ -1,5 +1,5 @@
 import prisma from '@/lib/prisma';
-import type { CreateProductInput, UpdateProductInput, AddStockInput } from './validators';
+import type { CreateProductInput, UpdateProductInput, AddStockInput, RemoveStockInput } from './validators';
 import { Prisma } from '@prisma/client';
 
 export async function getAllProducts() {
@@ -85,6 +85,39 @@ export async function addStock(data: AddStockInput) {
         stockBefore: new Prisma.Decimal(stockBefore),
         stockAfter: new Prisma.Decimal(stockAfter),
         remarks: data.remarks || null,
+      },
+    });
+
+    return tx.product.findUnique({ where: { id: data.productId } });
+  });
+}
+
+export async function removeStock(data: RemoveStockInput) {
+  return prisma.$transaction(async (tx) => {
+    const product = await tx.product.findUnique({ where: { id: data.productId } });
+    if (!product) throw new Error('ERR_PRODUCT_NOT_FOUND');
+
+    const stockBefore = Number(product.currentStock);
+    const stockAfter = stockBefore - data.quantity;
+
+    if (stockAfter < 0) throw new Error('ERR_INSUFFICIENT_STOCK');
+
+    await tx.product.update({
+      where: { id: data.productId },
+      data: { currentStock: new Prisma.Decimal(stockAfter) },
+    });
+
+    const remarkParts = [data.reason.replace(/_/g, ' ')];
+    if (data.remarks) remarkParts.push(data.remarks);
+
+    await tx.inventoryMovement.create({
+      data: {
+        productId: data.productId,
+        movementType: 'STOCK_REDUCE',
+        quantityChange: new Prisma.Decimal(-data.quantity),
+        stockBefore: new Prisma.Decimal(stockBefore),
+        stockAfter: new Prisma.Decimal(stockAfter),
+        remarks: remarkParts.join(': '),
       },
     });
 

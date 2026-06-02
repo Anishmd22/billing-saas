@@ -1,4 +1,4 @@
-// Global TypeScript type definitions for the Smart Billing system
+// Global TypeScript type definitions for Billio
 import type { InvoiceStatus, PaymentStatus, MovementType } from '@prisma/client';
 
 // Re-export Prisma enums for convenience

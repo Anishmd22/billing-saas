@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Printer, Download, MessageCircle, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
-import { invoicesApi, paymentsApi, type InvoiceDetail } from '@/lib/api-client';
+import { invoicesApi, type InvoiceDetail } from '@/lib/api-client';
 import { useAppStore } from '@/core/store/useAppStore';
 import { formatCurrency, numberToWords } from '@/core/utils/currency';
 import StatusBadge from '@/components/shared/StatusBadge';
@@ -26,6 +26,7 @@ export default function InvoiceViewScreen({ invoiceId }: InvoiceViewScreenProps)
 
   const [cancelOpen, setCancelOpen] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const [pdfDownloading, setPdfDownloading] = useState(false);
 
   const [paymentOpen, setPaymentOpen] = useState(false);
 
@@ -55,17 +56,36 @@ export default function InvoiceViewScreen({ invoiceId }: InvoiceViewScreenProps)
 
   function handlePrint() { window.print(); }
 
-  function handleDownloadPDF() {
+  async function handleDownloadPDF() {
     if (!invoice) return;
-    const params = new URLSearchParams({ invoiceId: invoice.id });
-    if (settings.companyName) params.set('cName', settings.companyName);
-    if (settings.companyAddress) params.set('cAddr', settings.companyAddress);
-    if (settings.companyGST) params.set('cGST', settings.companyGST);
-    if (settings.companyPhone) params.set('cPhone', settings.companyPhone);
-    if (settings.bankName) params.set('bName', settings.bankName);
-    if (settings.bankAccount) params.set('bAcc', settings.bankAccount);
-    if (settings.bankIFSC) params.set('bIFSC', settings.bankIFSC);
-    window.open(`/api/v1/pdf?${params}`, '_blank');
+    setPdfDownloading(true);
+    try {
+      const params = new URLSearchParams({ invoiceId: invoice.id });
+      if (settings.companyName) params.set('cName', settings.companyName);
+      if (settings.companyAddress) params.set('cAddr', settings.companyAddress);
+      if (settings.companyGST) params.set('cGST', settings.companyGST);
+      if (settings.companyPhone) params.set('cPhone', settings.companyPhone);
+      if (settings.bankName) params.set('bName', settings.bankName);
+      if (settings.bankAccount) params.set('bAcc', settings.bankAccount);
+      if (settings.bankIFSC) params.set('bIFSC', settings.bankIFSC);
+
+      const res = await fetch(`/api/v1/pdf?${params}`);
+      if (!res.ok) throw new Error('PDF generation failed');
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${invoice.invoiceNumber}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
+      toast.error('PDF download failed — please try again');
+    } finally {
+      setPdfDownloading(false);
+    }
   }
 
   function handleWhatsApp() {
@@ -245,9 +265,11 @@ export default function InvoiceViewScreen({ invoiceId }: InvoiceViewScreenProps)
             </button>
             <button
               onClick={handleDownloadPDF}
-              className="flex items-center justify-center gap-2 w-full h-9 text-sm font-medium rounded-lg border border-[var(--color-border)] text-[var(--color-text)] hover:bg-[var(--color-surface-secondary)] transition-colors"
+              disabled={pdfDownloading}
+              className="flex items-center justify-center gap-2 w-full h-9 text-sm font-medium rounded-lg border border-[var(--color-border)] text-[var(--color-text)] hover:bg-[var(--color-surface-secondary)] transition-colors disabled:opacity-50"
             >
-              <Download className="size-4" /> Download PDF
+              <Download className="size-4" />
+              {pdfDownloading ? 'Generating…' : 'Download PDF'}
             </button>
             <button
               onClick={handleWhatsApp}
