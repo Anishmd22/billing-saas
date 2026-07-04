@@ -23,6 +23,16 @@ Our goal is to provide an easy-to-use, scalable, and secure billing solution for
 
 ---
 
+# 👨‍💻 Team
+
+| Name     | Role      |
+| -------- | --------- |
+| Harjith  | Developer |
+| Rasswant | Developer |
+| Anish    | Developer |
+
+---
+
 # ✨ Features (Planned)
 
 ## 📄 Billing & Invoicing
@@ -222,20 +232,8 @@ Open
 
 ```
 http://localhost:3000
+
 ```
-
----
-
-# 👨‍💻 Team
-
-| Name     | Role      |
-| -------- | --------- |
-| Harjith  | Developer |
-| Rasswant | Developer |
-| Anish    | Developer |
-
----
-
 
 ```bash
 git checkout -b feature/feature-name
