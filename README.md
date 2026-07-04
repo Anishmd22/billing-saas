@@ -182,9 +182,9 @@ http://localhost:3000
 
 | Name | Role |
 |------|------|
-| Anish | Developer |
+| Harjith| Developer |
 | Rasswant | Developer |
-| Harjith | Developer |
+| Anish | Developer |
 
 ---
 
