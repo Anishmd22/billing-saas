@@ -182,7 +182,7 @@ http://localhost:3000
 
 | Name | Role |
 |------|------|
-| Anish | Full Stack Developer |
+| Anish | Developer |
 | Rasswant | Developer |
 | Harjith | Developer |
 
