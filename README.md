@@ -150,6 +150,45 @@ billing-saas/
 ├── README.md
 └── package.json
 ```
+# 🌿 Branching Strategy
+
+To maintain code quality and ensure a smooth collaboration process, follow these guidelines:
+
+1. **Never work directly on the `main` branch.**
+2. Create a new branch for every feature, bug fix, or enhancement.
+
+```bash
+git checkout -b feature/feature-name
+```
+
+Examples:
+
+* `feature/authentication`
+* `feature/invoice-module`
+* `feature/dashboard-ui`
+* `bugfix/login-error`
+
+3. Make your changes and commit them with meaningful commit messages.
+
+```bash
+git commit -m "Add customer management module"
+```
+
+4. Push your branch to GitHub.
+
+```bash
+git push origin feature/feature-name
+```
+
+5. Open a **Pull Request (PR)** to merge your branch into `main`.
+
+6. The project owner and team members will review your code. If any changes are requested, update your branch and push the new commits.
+
+7. After the Pull Request is approved, it will be merged into the `main` branch.
+
+> **Note:** Direct pushes to the `main` branch are **not allowed**. All changes must go through a Pull Request and be approved by the project owner or reviewers before merging.
+
+### We appreciate your contributions! 🚀
 
 ---
 
@@ -197,12 +236,6 @@ http://localhost:3000
 
 ---
 
-# 🤝 Contribution
-
-We follow a collaborative Git workflow.
-
-1. Fork the repository (or create a branch)
-2. Create your feature branch
 
 ```bash
 git checkout -b feature/feature-name
