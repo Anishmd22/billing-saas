@@ -1,3 +1,5 @@
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+
 # 🧾 Billing SaaS
 
 A modern Billing & Inventory Management SaaS platform designed for businesses to efficiently manage invoices, customers, inventory, payments, and business operations from a single dashboard.
@@ -24,6 +26,7 @@ Our goal is to provide an easy-to-use, scalable, and secure billing solution for
 # ✨ Features (Planned)
 
 ## 📄 Billing & Invoicing
+
 - Generate GST/Tax invoices
 - Print & Download PDF invoices
 - Invoice history
@@ -31,6 +34,7 @@ Our goal is to provide an easy-to-use, scalable, and secure billing solution for
 - Credit & Debit Notes
 
 ## 👥 Customer Management
+
 - Customer Profiles
 - Contact Information
 - Address Management
@@ -38,6 +42,7 @@ Our goal is to provide an easy-to-use, scalable, and secure billing solution for
 - Customer Purchase History
 
 ## 📦 Inventory Management
+
 - Product Management
 - Categories
 - Stock Tracking
@@ -45,6 +50,7 @@ Our goal is to provide an easy-to-use, scalable, and secure billing solution for
 - Barcode Support
 
 ## 💳 Payments
+
 - Payment Tracking
 - Pending Payments
 - Partial Payments
@@ -52,6 +58,7 @@ Our goal is to provide an easy-to-use, scalable, and secure billing solution for
 - Multiple Payment Methods
 
 ## 📊 Dashboard & Analytics
+
 - Sales Overview
 - Revenue Analytics
 - Top Selling Products
@@ -59,12 +66,14 @@ Our goal is to provide an easy-to-use, scalable, and secure billing solution for
 - Business Insights
 
 ## 👤 User Management
+
 - Authentication
 - Role Based Access
 - Admin Dashboard
 - Employee Management
 
 ## 🔐 Security
+
 - Secure Authentication
 - Protected Routes
 - Data Validation
@@ -180,11 +189,11 @@ http://localhost:3000
 
 # 👨‍💻 Team
 
-| Name | Role |
-|------|------|
-| Harjith| Developer |
+| Name     | Role      |
+| -------- | --------- |
+| Harjith  | Developer |
 | Rasswant | Developer |
-| Anish | Developer |
+| Anish    | Developer |
 
 ---
 
@@ -264,13 +273,6 @@ This project is licensed under the MIT License.
 ## 🌟 Support
 
 If you like this project, consider giving it a ⭐ on GitHub.
-
-
-
-
-
-
-
 
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
